@@ -1,10 +1,12 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import { QueryProvider } from "./QueryProvider";
+import { AuthSessionProvider } from "@/components/AuthSessionProvider";
+import { QueryProvider } from "@/app/QueryProvider";
 
 export const metadata: Metadata = {
-  title: "Realtime Next + MySQL Demo",
-  description: "React 19 + Prisma + TanStack + WebSockets demo",
+  title: "Realtime Next + MySQL Starter",
+  description: "Next 16 + Prisma + TanStack Query + WebSockets + Auth.js",
 };
 
 export default function RootLayout({
@@ -15,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <QueryProvider>{children}</QueryProvider>
+        <AuthSessionProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );
