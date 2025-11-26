@@ -1,65 +1,119 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useMemo, useState, FormEvent } from "react";
+import {
+  MaterialReactTable,
+  type MRT_ColumnDef,
+} from "material-react-table";
+import type { Message } from "@prisma/client";
+import { useMessages, useCreateMessage } from "@/hooks/useMessages";
+import { useSocket } from "@/hooks/useSocket";
+import { useQueryClient } from "@tanstack/react-query";
+
+export default function HomePage() {
+  const { data, isLoading, isError } = useMessages();
+  const socket = useSocket();
+  const queryClient = useQueryClient();
+  const createMessage = useCreateMessage(socket);
+
+  const [author, setAuthor] = useState("Scott");
+  const [content, setContent] = useState("");
+
+  // Listen for WS events and invalidate query when others create messages
+  useEffect(() => {
+    if (!socket) return;
+
+    const handler = () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    };
+
+    socket.on("message:created", handler);
+    return () => {
+      socket.off("message:created", handler);
+    };
+  }, [socket, queryClient]);
+
+  const columns = useMemo<MRT_ColumnDef<Message>[]>(
+    () => [
+      {
+        accessorKey: "id",
+        header: "ID",
+        size: 60,
+      },
+      {
+        accessorKey: "author",
+        header: "Author",
+      },
+      {
+        accessorKey: "content",
+        header: "Content",
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created At",
+        Cell: ({ cell }) =>
+          new Date(cell.getValue<string>()).toLocaleString(),
+      },
+    ],
+    []
+  );
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) return;
+
+    createMessage.mutate(
+      { author: author || "Anonymous", content },
+      {
+        onSuccess: () => setContent(""),
+      }
+    );
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main style={{ padding: "2rem" }}>
+      <h1 style={{ marginBottom: "1rem" }}>Realtime Messages Demo</h1>
+
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: "flex",
+          gap: "0.5rem",
+          marginBottom: "1rem",
+          alignItems: "center",
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Author"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          style={{ padding: "0.5rem" }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        <input
+          type="text"
+          placeholder="Message content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          style={{ flex: 1, padding: "0.5rem" }}
+        />
+        <button type="submit" disabled={createMessage.isPending}>
+          {createMessage.isPending ? "Saving..." : "Add Message"}
+        </button>
+      </form>
+
+      {isLoading && <div>Loading messages…</div>}
+      {isError && <div>Error loading messages.</div>}
+
+      {data && (
+        <MaterialReactTable
+          columns={columns}
+          data={data}
+          enableColumnActions={false}
+          enableColumnFilters={false}
+          enableSorting
+        />
+      )}
+    </main>
   );
 }
