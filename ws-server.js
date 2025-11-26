@@ -1,5 +1,5 @@
 // ws-server.js
-import { Server } from "socket.io";
+const { Server } = require("socket.io");
 
 const io = new Server(4000, {
   cors: {
@@ -12,7 +12,7 @@ io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
   socket.on("message:created", (payload) => {
-    // Broadcast to all *other* clients
+    // Broadcast to all other clients
     socket.broadcast.emit("message:created", payload);
   });
 

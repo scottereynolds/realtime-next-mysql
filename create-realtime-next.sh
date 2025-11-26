@@ -408,4 +408,127 @@ export default function HomePage() {
     createMessage.mutate(
       { author: author || "Anonymous", content },
       {
-        o
+        onSuccess: () => setContent(""),
+      }
+    );
+  };
+
+  return (
+    <main className="min-h-screen p-8 bg-slate-950 text-slate-100">
+      <h1 className="mb-4 text-2xl font-bold">
+        Realtime Messages Demo
+      </h1>
+
+      <form
+        onSubmit={handleSubmit}
+        className="mb-4 flex items-center gap-2"
+      >
+        <input
+          type="text"
+          placeholder="Author"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          className="rounded border border-slate-700 bg-slate-900 px-2 py-1"
+        />
+        <input
+          type="text"
+          placeholder="Message content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1"
+        />
+        <button
+          type="submit"
+          disabled={createMessage.isPending}
+          className="rounded bg-emerald-600 px-3 py-1 text-sm font-semibold hover:bg-emerald-500 disabled:opacity-60"
+        >
+          {createMessage.isPending ? "Saving..." : "Add Message"}
+        </button>
+      </form>
+
+      {isLoading && <div>Loading messages…</div>}
+      {isError && <div>Error loading messages.</div>}
+
+      {data && (
+        <div className="rounded border border-slate-800 bg-slate-900 p-2">
+          <MaterialReactTable
+            columns={columns}
+            data={data}
+            enableColumnActions={false}
+            enableColumnFilters={false}
+            enableSorting
+          />
+        </div>
+      )}
+    </main>
+  );
+}
+EOF
+
+# 16. WebSocket server (ws-server.js) - CommonJS to avoid Node ESM warnings
+cat > ws-server.js << 'EOF'
+// ws-server.js
+const { Server } = require("socket.io");
+
+const io = new Server(4000, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("Client connected:", socket.id);
+
+  socket.on("message:created", (payload) => {
+    // Broadcast to all other clients
+    socket.broadcast.emit("message:created", payload);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+});
+
+console.log("WebSocket server listening on http://localhost:4000");
+EOF
+
+# 17. Add "ws" script to package.json
+echo "=== Adding ws script to package.json ==="
+node << 'EOF'
+const fs = require('fs');
+const path = 'package.json';
+if (!fs.existsSync(path)) process.exit(0);
+
+const raw = fs.readFileSync(path, 'utf8');
+const pkg = JSON.parse(raw);
+
+pkg.scripts = pkg.scripts || {};
+if (!pkg.scripts.ws) {
+  pkg.scripts.ws = "node ws-server.js";
+}
+
+fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
+EOF
+
+# 18. Ask about git initialization (no GitHub CLI)
+echo
+read -rp "Initialize a local git repository in this project? [y/N] " INIT_GIT
+if [[ "$INIT_GIT" =~ ^[Yy]$ ]]; then
+  echo "=== Initializing git repository ==="
+  git init
+  git add .
+  git commit -m "Initial realtime Next.js + Prisma + TanStack + WebSockets setup" \
+    >/dev/null 2>&1 || echo "(git commit skipped or already committed)"
+
+  echo
+  echo "Git repo initialized locally."
+  echo "To connect to GitHub:"
+  echo "  1) Create a new repo in the GitHub UI (no README/.gitignore)."
+  echo "  2) Then run (with your actual URL):"
+  echo "       git remote add origin https://github.com/<user>/<repo>.git"
+  echo "       git branch -M main"
+  echo "       git push -u origin main"
+else
+  echo "Skipping git initialization. You can run 'git init' later if you like."
+fi
