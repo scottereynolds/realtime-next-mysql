@@ -1,36 +1,258 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+⚡ Realtime Next.js + Prisma + MySQL + TanStack Query + WebSockets Starter
 
-## Getting Started
+This project is a full-stack realtime application template powered by:
 
-First, run the development server:
+Next.js 16 (App Router, React 19)
 
-```bash
+Prisma ORM with MySQL
+
+TanStack Query v5 for client-side data management
+
+Socket.IO WebSockets for realtime updates
+
+Material React Table (MRT) + MUI UI components
+
+Tailwind CSS (preconfigured)
+
+A full bootstrap script that generates a ready-to-run realtime project
+
+The goal is to recreate the “automatic screen updates” effect familiar from Angular’s two-way binding — but using modern React + WebSockets + cache invalidation.
+
+🚀 What the Project Generator Provides
+
+Running create-realtime-next.sh automatically sets up:
+
+A brand-new Next.js 16 / React 19 project
+
+Tailwind CSS enabled
+
+Prisma + MySQL + dotenv integration
+
+A starter Message model with schema + migration
+
+REST API routes for messages (/api/messages)
+
+TanStack Query v5 with a global QueryProvider
+
+A WebSocket server with Socket.IO (ws-server.js)
+
+React hooks for reading/creating messages
+
+A realtime Material React Table UI
+
+Optional git repo initialization (local)
+
+Once complete, you have a fully working realtime app where creating a message updates all open browser windows instantly.
+
+🛠 Prerequisites
+
+Before using the generator script:
+
+Required
+
+Node.js 18+
+
+npm (or pnpm)
+
+MySQL running locally (default: localhost:3306)
+
+Bash (Git Bash on Windows works perfectly)
+
+Optional (recommended)
+
+Git (to initialize a repo and push to GitHub)
+
+GitHub account (if you want to store your project remotely)
+
+📦 Installing the Bootstrap Script
+
+Place the script in any folder on your machine, for example:
+
+C:\dev\scripts\create-realtime-next.sh (Windows)
+
+~/dev/scripts/create-realtime-next.sh (macOS/Linux)
+
+Make it executable (macOS/Linux/Git Bash):
+
+chmod +x create-realtime-next.sh
+
+
+On Windows from PowerShell, you can run it via Git Bash:
+
+bash create-realtime-next.sh
+
+🚧 Running the Script
+
+From a terminal where create-realtime-next.sh lives:
+
+./create-realtime-next.sh
+
+
+You will be prompted for:
+
+Project name → becomes the directory name
+
+Database host → default: localhost
+
+Database port → default: 3306
+
+Username → default: root
+
+Password → can be empty
+
+Database name → defaults to project name
+
+Initialize local git repository? → y/n
+
+After that, the script will:
+
+Create a new Next.js project with Tailwind
+
+Set up Prisma + MySQL + dotenv
+
+Generate a Message model and Prisma schema
+
+Create REST endpoints at /api/messages
+
+Add TanStack Query and a QueryProvider wrapper
+
+Add useSocket and useMessages hooks
+
+Create a simple page with:
+
+A form to create messages
+
+An MRT table to view them
+
+Realtime updates via WebSocket broadcasting
+
+Create ws-server.js and a ws npm script
+
+Optionally initialize a git repository
+
+🗄️ Apply Prisma Migrations
+
+After the script finishes:
+
+cd <project-name>
+npx prisma migrate dev --name init_messages
+
+
+This will:
+
+Create the database (if it doesn’t exist)
+
+Apply the Message schema
+
+Generate the Prisma client
+
+🛰 Starting the Servers
+
+You’ll run two servers: WebSocket + Next.js.
+
+1. Start the WebSocket server (port 4000)
+npm run ws
+
+
+You should see something like:
+
+WebSocket server listening on http://localhost:4000
+
+
+Leave this process running.
+
+2. Start the Next.js dev server (port 3000)
+
+In a second terminal:
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Then open:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+http://localhost:3000
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+Open the app in multiple browser windows or tabs.
+When you submit a new message in one window, the others should update automatically in realtime.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+🌐 Using Git + GitHub
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+If you chose to initialize a local git repo in the script, you’ll already have:
 
-## Deploy on Vercel
+git init
+git add .
+git commit -m "Initial realtime Next.js + Prisma + TanStack + WebSockets setup"
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+To connect it to GitHub:
+
+Create a new repository from the GitHub web UI (no README / .gitignore / license is safest).
+
+Copy the repo URL (HTTPS is fine).
+
+Run:
+
+git remote add origin https://github.com/<your-username>/<repo-name>.git
+git branch -M main
+git push -u origin main
+
+
+Your realtime starter is now backed up on GitHub.
+
+📁 Project Structure
+
+After generation, your project will look roughly like this:
+
+<project-name>/
+│
+├── prisma/
+│   ├── schema.prisma          # MySQL datasource + Message model
+│   └── prisma.config.ts       # Loads dotenv + points to schema
+│
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── messages/
+│   │   │       └── route.ts   # GET/POST endpoints for messages
+│   │   ├── QueryProvider.tsx  # TanStack Query v5 provider
+│   │   ├── layout.tsx         # Wraps app with QueryProvider
+│   │   └── page.tsx           # Form + MRT table + realtime updates
+│   │
+│   ├── hooks/
+│   │   ├── useSocket.ts       # Socket.IO client hook
+│   │   └── useMessages.ts     # TanStack Query hooks (list + create)
+│   │
+│   └── lib/
+│       └── prisma.ts          # PrismaClient singleton
+│
+├── ws-server.js               # WebSocket server (CommonJS, no warnings)
+├── global.d.ts                # Allows importing CSS files in TS
+├── package.json
+└── README.md
+
+🎉 Ready for Realtime Development
+
+This starter gives you a solid, modern foundation for:
+
+Realtime dashboards
+
+Live admin panels
+
+Chat or messaging systems
+
+Collaborative tools
+
+Any UI that should update when data changes in MySQL
+
+From here you can:
+
+Add more Prisma models + tables
+
+Scaffold additional API routes
+
+Swap the simple message form/table for your own domain (users, apps, logs, etc.)
+
+Integrate your Base component library and design system
+
+Introduce auth, multi-tenancy, cron, background jobs, etc.
