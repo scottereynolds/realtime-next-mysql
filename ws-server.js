@@ -16,6 +16,10 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("message:created", payload);
   });
 
+  socket.on("message:deleted", (payload) => {
+    socket.broadcast.emit("message:deleted", payload);
+  });
+
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });

@@ -1,26 +1,450 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base semantic colors */
+  --background: 248 250 252;
+  --foreground: 15 23 42;
+
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+
+  --primary: 37 99 235;
+  --primary-foreground: 255 255 255;
+
+  --secondary: 15 118 110;
+  --secondary-foreground: 240 253 250;
+
+  --accent: 79 70 229;
+  --accent-foreground: 238 242 255;
+
+  --destructive: 220 38 38;
+  --destructive-foreground: 254 242 242;
+
+  --border: 148 163 184;
+  --input: 226 232 240;
+  --ring: 59 130 246;
+
+  /* States & feedback */
+  --success: 22 163 74;
+  --success-foreground: 240 253 244;
+
+  --warning: 234 179 8;
+  --warning-foreground: 254 249 195;
+
+  --info: 59 130 246;
+  --info-foreground: 239 246 255;
+
+  --error: 220 38 38;
+  --error-foreground: 254 242 242;
+
+  /* Radii */
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgb(15 23 42 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(15 23 42 / 0.1), 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-md: 0 4px 6px rgb(15 23 42 / 0.1), 0 2px 4px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 10px 15px rgb(15 23 42 / 0.1), 0 4px 6px rgb(15 23 42 / 0.05);
+
+  /* Borders */
+  --border-width: 1px;
+  --border-radius: var(--radius-md);
+
+  /* Layout/z layers */
+  --z-nav: 1000;
+  --z-dialog: 1300;
+  --z-drawer: 1200;
+  --z-tooltip: 1500;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Dark theme: grayscale, no pure white backgrounds */
+[data-theme="dark"] {
+  --background: 10 10 10;
+  --foreground: 243 244 246;
+
+  --muted: 24 24 27;
+  --muted-foreground: 161 161 170;
+
+  /* Use a light grey instead of white for primary backgrounds */
+  --primary: 229 231 235;              /* neutral-200 */
+  --primary-foreground: 15 15 15;
+
+  --secondary: 82 82 82;               /* neutral-600 */
+  --secondary-foreground: 250 250 250;
+
+  --accent: 115 115 115;               /* neutral-500 */
+  --accent-foreground: 250 250 250;
+
+  --destructive: 64 64 64;             /* neutral-700 */
+  --destructive-foreground: 250 250 250;
+
+  --border: 63 63 70;                  /* zinc-700 */
+  --input: 39 39 42;                   /* zinc-800 */
+  --ring: 212 212 216;                 /* neutral-300 */
+
+  --success: 163 163 163;              /* neutral-400 */
+  --success-foreground: 10 10 10;
+
+  --warning: 190 190 190;              /* neutral-300/400 */
+  --warning-foreground: 15 15 15;
+
+  --info: 209 213 219;                 /* gray-300 */
+  --info-foreground: 15 15 15;
+
+  --error: 120 120 120;                /* neutral-500 */
+  --error-foreground: 250 250 250;
+
+  /* Dark shadows – neutral, no color tint */
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.7);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.75), 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 6px rgb(0 0 0 / 0.7), 0 2px 4px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 10px 15px rgb(0 0 0 / 0.7), 0 4px 6px rgb(0 0 0 / 0.65);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Arctic theme: cool, bright, icy */
+[data-theme="arctic"] {
+  --background: 236 244 250;           /* pale icy blue */
+  --foreground: 15 23 42;              /* slate-900 */
+
+  --muted: 219 234 254;                /* sky-100 */
+  --muted-foreground: 71 85 105;       /* slate-600 */
+
+  --primary: 59 130 246;               /* blue-500 */
+  --primary-foreground: 255 255 255;
+
+  --secondary: 56 189 248;             /* sky-400 */
+  --secondary-foreground: 15 23 42;
+
+  --accent: 129 140 248;               /* indigo-400 */
+  --accent-foreground: 15 23 42;
+
+  --destructive: 239 68 68;            /* red-500 */
+  --destructive-foreground: 255 255 255;
+
+  --border: 148 163 184;               /* slate-400 */
+  --input: 226 232 240;                /* slate-200 */
+  --ring: 59 130 246;                  /* blue-500 */
+
+  --success: 34 197 94;                /* green-500 */
+  --success-foreground: 240 253 250;
+
+  --warning: 234 179 8;                /* amber-400 */
+  --warning-foreground: 24 24 27;
+
+  --info: 59 130 246;                  /* blue-500 */
+  --info-foreground: 239 246 255;
+
+  --error: 220 38 38;                  /* red-600 */
+  --error-foreground: 254 242 242;
+}
+
+/* Forest theme: deep greens, earthy */
+[data-theme="forest"] {
+  --background: 10 24 18;              /* very dark green */
+  --foreground: 236 252 203;           /* lime-100 */
+
+  --muted: 22 44 36;
+  --muted-foreground: 190 242 100;     /* lime-300 */
+
+  --primary: 22 101 52;                /* green-700 */
+  --primary-foreground: 240 253 244;   /* green-50 */
+
+  --secondary: 63 98 18;               /* lime-800 */
+  --secondary-foreground: 236 252 203;
+
+  --accent: 34 197 94;                 /* green-500 */
+  --accent-foreground: 10 24 18;
+
+  --destructive: 185 28 28;            /* red-700 */
+  --destructive-foreground: 254 242 242;
+
+  --border: 30 64 34;
+  --input: 15 35 26;
+  --ring: 190 242 100;
+
+  --success: 74 222 128;               /* green-400 */
+  --success-foreground: 10 24 18;
+
+  --warning: 234 179 8;                /* amber-400 */
+  --warning-foreground: 23 37 84;
+
+  --info: 59 130 246;                  /* blue-500 */
+  --info-foreground: 239 246 255;
+
+  --error: 239 68 68;                  /* red-500 */
+  --error-foreground: 254 242 242;
+}
+
+/* Ocean theme: deep blues/teals */
+[data-theme="ocean"] {
+  --background: 8 22 38;               /* very dark blue */
+  --foreground: 226 232 240;           /* slate-200 */
+
+  --muted: 15 23 42;                   /* slate-900 */
+  --muted-foreground: 148 163 184;     /* slate-400 */
+
+  --primary: 37 99 235;                /* blue-600 */
+  --primary-foreground: 239 246 255;   /* blue-50 */
+
+  --secondary: 6 182 212;              /* cyan-500 */
+  --secondary-foreground: 8 22 38;
+
+  --accent: 56 189 248;                /* sky-400 */
+  --accent-foreground: 8 22 38;
+
+  --destructive: 239 68 68;            /* red-500 */
+  --destructive-foreground: 254 242 242;
+
+  --border: 30 64 175;                 /* indigo-700 */
+  --input: 15 23 42;                   /* slate-900 */
+  --ring: 59 130 246;                  /* blue-500 */
+
+  --success: 34 197 94;                /* green-500 */
+  --success-foreground: 240 253 244;
+
+  --warning: 234 179 8;                /* amber-400 */
+  --warning-foreground: 15 23 42;
+
+  --info: 59 130 246;                  /* blue-500 */
+  --info-foreground: 239 246 255;
+
+  --error: 220 38 38;                  /* red-600 */
+  --error-foreground: 254 242 242;
+}
+
+/* ─────────────────────────────
+   Tech / Cyber RGB Theme
+   data-theme="cyber"
+   ───────────────────────────── */
+
+[data-theme="cyber"] {
+  /* Dark base */
+  --background: 3 7 18;
+  --foreground: 226 232 240;
+
+  --muted: 15 23 42;
+  --muted-foreground: 148 163 184;
+
+  /* Neon accents */
+  --primary: 56 189 248;           /* cyan-400 */
+  --primary-foreground: 3 7 18;
+
+  --secondary: 129 140 248;        /* indigo-400 */
+  --secondary-foreground: 3 7 18;
+
+  --accent: 244 63 94;             /* rose-500 */
+  --accent-foreground: 15 23 42;
+
+  /* RGB in borders & inputs */
+  --border: 56 189 248;            /* cyan border */
+  --input: 30 64 175;              /* indigo-ish input outline */
+  --ring: 56 189 248;              /* cyan focus ring */
+
+  --card: 15 23 42;
+  --card-foreground: 226 232 240;
+
+  --popover: 15 23 42;
+  --popover-foreground: 226 232 240;
+
+  --loading-bar-bg: linear-gradient(
+    90deg,
+    rgb(56 189 248),
+    rgb(129 140 248),
+    rgb(244 63 94)
+  );
+}
+
+/* Animated RGB border wrapper for cyber theme only */
+@keyframes vr-rgb-border-shimmer {
+  0% {
+    background-position: 0% 50%;
+    opacity: 0.4;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.7;
+  }
+  100% {
+    background-position: 0% 50%;
+    opacity: 0.4;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+[data-theme="cyber"] .vr-rgb-border {
+  position: relative;
+  border-radius: 0.75rem; /* tweak as desired */
+  padding: 1px;          /* border thickness */
+  background-image: linear-gradient(
+    120deg,
+    rgb(56 189 248),
+    rgb(129 140 248),
+    rgb(244 63 94),
+    rgb(34 197 94)
+  );
+  background-size: 300% 300%;
+  /* Slow and subtle – “occasional” shimmer */
+  animation: vr-rgb-border-shimmer 18s ease-in-out infinite;
+}
+
+/* Inner container so your content doesn’t get the gradient itself */
+[data-theme="cyber"] .vr-rgb-border-inner {
+  border-radius: inherit;
+  background-color: rgb(var(--card));
+}
+
+/* ─────────────────────────────
+   East Carolina Pirates Theme
+   Purple & Gold
+   data-theme="pirates"
+   ───────────────────────────── */
+
+[data-theme="pirates"] {
+  --background: 15 23 42;          /* deep navy/slate */
+  --foreground: 250 250 252;       /* near-white */
+
+  --muted: 30 41 59;
+  --muted-foreground: 156 163 175;
+
+  --primary: 75 33 114;            /* ECU purple-ish (#4B2172) */
+  --primary-foreground: 250 250 252;
+
+  --secondary: 253 200 47;         /* ECU gold (#FDC82F) */
+  --secondary-foreground: 24 24 27;
+
+  --accent: 147 51 234;            /* violet-600 for extra pop */
+  --accent-foreground: 250 250 252;
+
+  --border: 39 39 42;              /* zinc-800 */
+  --input: 39 39 42;
+  --ring: 253 200 47;              /* gold ring */
+
+  --card: 24 24 27;
+  --card-foreground: 250 250 252;
+
+  --popover: 24 24 27;
+  --popover-foreground: 250 250 252;
+
+  --loading-bar-bg: linear-gradient(
+    90deg,
+    rgb(75 33 114),
+    rgb(147 51 234),
+    rgb(253 200 47)
+  );
+}
+
+
+/* ─────────────────────────────
+   Green Bay Packers Theme
+   Green & Gold
+   data-theme="packers"
+   ───────────────────────────── */
+
+[data-theme="packers"] {
+  --background: 10 30 23;          /* deep green / teal-ish */
+  --foreground: 248 250 252;       /* very light */
+
+  --muted: 22 44 36;
+  --muted-foreground: 187 247 208; /* emerald-200 */
+
+  --primary: 32 55 49;             /* Packers dark green (#203731) */
+  --primary-foreground: 248 250 252;
+
+  --secondary: 255 182 18;         /* Packers gold (#FFB612) */
+  --secondary-foreground: 24 24 27;
+
+  --accent: 74 222 128;            /* emerald-400 */
+  --accent-foreground: 10 30 23;
+
+  --border: 22 44 36;
+  --input: 22 44 36;
+  --ring: 255 182 18;              /* gold focus ring */
+
+  --card: 15 35 28;
+  --card-foreground: 248 250 252;
+
+  --popover: 15 35 28;
+  --popover-foreground: 248 250 252;
+
+  --loading-bar-bg: linear-gradient(
+    90deg,
+    rgb(32 55 49),
+    rgb(74 222 128),
+    rgb(255 182 18)
+  );
+}
+
+
+/* ─────────────────────────────
+   Barbie / Pink Theme
+   Fun, bright UI
+   data-theme="barbie"
+   ───────────────────────────── */
+
+[data-theme="barbie"] {
+  --background: 255 240 250;       /* very soft pink */
+  --foreground: 88 28 135;         /* purple text */
+
+  --muted: 252 231 243;            /* pink-100-ish */
+  --muted-foreground: 190 24 93;   /* pink-700 */
+
+  --primary: 224 33 138;           /* Barbie pink */
+  --primary-foreground: 255 247 250;
+
+  --secondary: 251 113 133;        /* rose-400 */
+  --secondary-foreground: 88 28 135;
+
+  --accent: 129 140 248;           /* soft indigo for contrast */
+  --accent-foreground: 250 250 255;
+
+  --border: 244 114 182;           /* pink-400 */
+  --input: 251 207 232;            /* pink-200 */
+  --ring: 224 33 138;              /* Barbie pink focus ring */
+
+  --card: 255 247 250;
+  --card-foreground: 88 28 135;
+
+  --popover: 255 247 250;
+  --popover-foreground: 88 28 135;
+
+  --loading-bar-bg: linear-gradient(
+    90deg,
+    rgb(224 33 138),
+    rgb(251 113 133),
+    rgb(129 140 248)
+  );
+}
+
+@layer utilities {
+  .bg-app {
+    background-color: rgb(var(--background));
+  }
+
+  .text-app {
+    color: rgb(var(--foreground));
+  }
+
+  .border-app {
+    border-color: rgb(var(--border));
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center text-sm font-medium;
+    border-radius: var(--radius-md);
+    background-color: rgb(var(--primary));
+    color: rgb(var(--primary-foreground));
+  }
+
+  .input-base {
+    @apply text-sm;
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    border-radius: var(--radius-sm);
+    border-width: var(--border-width);
+    border-color: rgb(var(--border));
+  }
 }

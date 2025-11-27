@@ -1,8 +1,13 @@
-// src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthSessionProvider } from "@/components/AuthSessionProvider";
+import { AuthSessionProvider } from "@/features/auth/components/AuthSessionProvider";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { QueryProvider } from "@/app/QueryProvider";
+import { AppShell } from "@/features/layout/components/AppShell";
+import { SnackbarProvider } from "@/contexts/SnackbarContext";
+import { DialogProvider } from "@/contexts/DialogContext";
+import { LoadingProvider } from "@/contexts/LoadingContext";
+import { RouteLoadingWatcher } from "@/components/Routing/RouteLoadingWatcher";
 
 export const metadata: Metadata = {
   title: "Realtime Next + MySQL Starter",
@@ -16,10 +21,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <AuthSessionProvider>
-          <QueryProvider>{children}</QueryProvider>
-        </AuthSessionProvider>
+      <body className="bg-app text-app">
+        <ThemeProvider>
+          <LoadingProvider>
+            <SnackbarProvider>
+              <DialogProvider>
+                <AuthSessionProvider>
+                  <QueryProvider>
+                    <AppShell>
+                      <RouteLoadingWatcher />
+                      {children}
+                    </AppShell>
+                  </QueryProvider>
+                </AuthSessionProvider>
+              </DialogProvider>
+            </SnackbarProvider>
+          </LoadingProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
