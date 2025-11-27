@@ -8,6 +8,7 @@ import { SnackbarProvider } from "@/contexts/SnackbarContext";
 import { DialogProvider } from "@/contexts/DialogContext";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 import { RouteLoadingWatcher } from "@/components/Routing/RouteLoadingWatcher";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "Realtime Next + MySQL Starter",
@@ -23,20 +24,22 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-app text-app">
         <ThemeProvider>
-          <LoadingProvider>
-            <SnackbarProvider>
-              <DialogProvider>
-                <AuthSessionProvider>
-                  <QueryProvider>
-                    <AppShell>
-                      <RouteLoadingWatcher />
-                      {children}
-                    </AppShell>
-                  </QueryProvider>
-                </AuthSessionProvider>
-              </DialogProvider>
-            </SnackbarProvider>
-          </LoadingProvider>
+          <AuthProvider>
+            <LoadingProvider>
+              <SnackbarProvider>
+                <DialogProvider>
+                  <AuthSessionProvider>
+                    <QueryProvider>
+                      <AppShell>
+                        <RouteLoadingWatcher />
+                        {children}
+                      </AppShell>
+                    </QueryProvider>
+                  </AuthSessionProvider>
+                </DialogProvider>
+              </SnackbarProvider>
+            </LoadingProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
