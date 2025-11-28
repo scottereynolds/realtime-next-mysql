@@ -6,7 +6,6 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 
-// Keep this in sync with however you conceptually use roles.
 type AppRole = "user" | "administrator";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
@@ -20,7 +19,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       },
       authorize: async (credentials) => {
         const email =
-          typeof credentials?.email === "string" ? credentials.email.trim() : "";
+          typeof credentials?.email === "string"
+            ? credentials.email.trim()
+            : "";
         const password =
           typeof credentials?.password === "string"
             ? credentials.password
@@ -30,7 +31,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Let Prisma infer the correct User type.
         const dbUser = await prisma.user.findUnique({
           where: { email },
         });
@@ -39,11 +39,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Use `any` here to avoid NextAuth type collisions.
         const authUser = dbUser as any;
 
         if (!authUser.passwordHash) {
-          // No local password set → reject credentials login
           return null;
         }
 
@@ -52,13 +50,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // This object becomes `user` in the JWT callback on initial sign-in
         return {
           id: String(dbUser.id),
           name: dbUser.name,
           email: dbUser.email,
-          // If your DB actually has a role, we’ll pass it through;
-          // otherwise fall back to "user".
           role: (authUser.role ?? "user") as AppRole,
         };
       },
@@ -71,25 +66,117 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   ],
 
   callbacks: {
-    async jwt({ token, user }) {
-      // When we first sign in with credentials, `user` carries the role we returned.
-      if (user && (user as any).role) {
-        (token as any).role = (user as any).role as AppRole;
+    // JWT = single source of truth (for auth() and useSession().update)
+    async jwt({ token, user, trigger, session }) {
+      // Initial sign-in (credentials or GitHub)
+      if (user) {
+        const authUser = user as any;
+        const userId = String(authUser.id);
+        const role: AppRole = (authUser.role ?? "user") as AppRole;
+
+        (token as any).userId = userId;
+        (token as any).role = role;
+        (token as any).email = authUser.email;
+        (token as any).name = authUser.name;
+
+        // Real (non-impersonated) user identity
+        if (!(token as any).realUserId) {
+          (token as any).realUserId = userId;
+        }
+        if (!(token as any).realUserRole) {
+          (token as any).realUserRole = role;
+        }
+
+        // If we log in fresh, drop any stale impersonation
+        (token as any).impersonatedUserId = null;
       }
 
-      // Fallback so we always have *some* role value
+      // Handle impersonation via useSession().update(...)
+      if (trigger === "update" && session) {
+        const payload = session as any;
+
+        // Start or switch impersonation
+        if (payload.impersonateUserId) {
+          const realRole =
+            ((token as any).realUserRole as AppRole | undefined) ??
+            ((token as any).role as AppRole | undefined) ??
+            "user";
+
+          // Only *real* admins can impersonate
+          if (realRole !== "administrator") {
+            return token;
+          }
+
+          const target = await prisma.user.findUnique({
+            where: { id: String(payload.impersonateUserId) },
+          });
+
+          if (!target) {
+            return token;
+          }
+
+          (token as any).impersonatedUserId = String(target.id);
+          (token as any).userId = String(target.id);
+          (token as any).role = (target.role ?? "user") as AppRole;
+          (token as any).email = target.email;
+          (token as any).name = target.name;
+        }
+
+        // Stop impersonating → restore real identity
+        if (payload.stopImpersonating) {
+          const realUserId = (token as any).realUserId;
+          const realUserRole = (token as any).realUserRole as
+            | AppRole
+            | undefined;
+
+          (token as any).impersonatedUserId = null;
+
+          if (realUserId) {
+            (token as any).userId = realUserId;
+          }
+          if (realUserRole) {
+            (token as any).role = realUserRole;
+          }
+        }
+      }
+
+      // Backstops
       if (!(token as any).role) {
         (token as any).role = "user" as AppRole;
+      }
+      if (!(token as any).userId && token.sub) {
+        (token as any).userId = token.sub;
+      }
+      if (!(token as any).realUserId && (token as any).userId) {
+        (token as any).realUserId = (token as any).userId;
+      }
+      if (!(token as any).realUserRole && (token as any).role) {
+        (token as any).realUserRole = (token as any).role;
       }
 
       return token;
     },
 
+    // What the client sees via useSession()
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.sub;
+        (session.user as any).id =
+          (token as any).userId ?? token.sub ?? (session.user as any).id;
+
         (session.user as any).role =
           ((token as any).role as AppRole | undefined) ?? "user";
+
+        (session.user as any).realUserId =
+          (token as any).realUserId ?? (session.user as any).id;
+        (session.user as any).realUserRole =
+          ((token as any).realUserRole as AppRole | undefined) ??
+          (session.user as any).role;
+
+        (session.user as any).impersonatedUserId =
+          (token as any).impersonatedUserId ?? null;
+        (session.user as any).isImpersonating = Boolean(
+          (token as any).impersonatedUserId,
+        );
       }
 
       return session;

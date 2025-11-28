@@ -7,17 +7,42 @@ import { BaseListItemIcon } from "@/components/MUI/DataDisplay/BaseListItemIcon"
 import { BaseListItemText } from "@/components/MUI/DataDisplay/BaseListItemText";
 import HomeIcon from "@mui/icons-material/Home";
 import ChatIcon from "@mui/icons-material/Chat";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+type NavItem = {
+  label: string;
+  icon: typeof HomeIcon;
+  href: string;
+  labelShort: string;
+};
 
 export function LayoutSidebar({ open }: { open: boolean }) {
   const width = open ? 240 : 64;
   const pathname = usePathname();
+  const { data: session } = useSession();
 
-  const navItems = [
-    { label: "Home", icon: HomeIcon, href: "/" },
-    { label: "Messages", icon: ChatIcon, href: "/messages" },
+  const isAdmin = session?.user?.role === "administrator";
+
+  const baseNavItems: NavItem[] = [
+    { label: "Home", labelShort: "Home", icon: HomeIcon, href: "/" },
+    { label: "Messages", labelShort: "Msgs", icon: ChatIcon, href: "/messages" },
   ];
+
+  const adminNavItems: NavItem[] = isAdmin
+    ? [
+        {
+          label: "Admin",
+          labelShort: "Admin",
+          icon: AdminPanelSettingsIcon,
+          href: "/admin/users",
+        },
+      ]
+    : [];
+
+  const navItems = [...baseNavItems, ...adminNavItems];
 
   return (
     <BaseBox
