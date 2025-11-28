@@ -2,24 +2,52 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  user
-  administrator
-}
-
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-model Message {
-  id        Int      @id @default(autoincrement())
-  content   String
-  author    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum Role {
+  user
+  administrator
 }
 
+/**
+ * New: Conversation type enum for chat (direct vs group).
+ */
+enum ConversationType {
+  direct
+  group
+}
+
+/**
+ * Existing message model, extended for chat.
+ *
+ * - Keeps `content` and `author` so your current UI continues to work.
+ * - Adds:
+ *   - senderId: optional FK to User (the true sender)
+ *   - conversationId: optional FK to Conversation
+ *   - sender / conversation relations
+ */
+model Message {
+  id             Int           @id @default(autoincrement())
+  content        String
+  author         String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // New relational fields for the chat system
+  senderId       String?
+  conversationId Int?
+
+  // IMPORTANT: relation name matches User.sentMessages
+  sender         User?         @relation("UserSentMessages", fields: [senderId], references: [id])
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+}
+
+/**
+ * Existing NextAuth-compatible User model.
+ */
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -28,10 +56,48 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
-  role          Role     @default(user)
-  passwordHash  String?  @map("password_hash")
+  role          Role      @default(user)
+  passwordHash  String?   @map("password_hash")
+
+  // New: relation to conversations via ConversationParticipant
+  conversationParticipants ConversationParticipant[]
+
+  // New: relation to messages they send
+  sentMessages             Message[] @relation("UserSentMessages")
 }
 
+/**
+ * New: Conversation model – 1-to-1 or group chat thread.
+ */
+model Conversation {
+  id           Int                      @id @default(autoincrement())
+  type         ConversationType         @default(direct)
+  title        String?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+/**
+ * New: Join table between User and Conversation with per-user read state.
+ */
+model ConversationParticipant {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  userId         String
+  lastReadAt     DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+/**
+ * Existing NextAuth models.
+ */
 model Account {
   id                String  @id @default(cuid())
   userId            String

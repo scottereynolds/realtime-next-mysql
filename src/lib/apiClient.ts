@@ -1,4 +1,4 @@
-import { HttpMethod, ApiErrorPayload } from "@/types/api";
+import { ApiErrorPayload } from "@/types/api";
 
 export class ApiError extends Error {
   status: number;

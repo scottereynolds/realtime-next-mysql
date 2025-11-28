@@ -2,6 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
+import ChatLauncher from "@/features/messages/components/ChatLauncher";
 
 export function AuthBar() {
   const { data: session, status } = useSession();
@@ -40,9 +41,12 @@ export function AuthBar() {
     );
   }
 
-  // Authenticated: keep it minimal; detailed info + prefs live in the avatar menu
+  // Authenticated: minimal info + sign out + chat icon
   return (
     <div className="flex items-center justify-end gap-3 px-2 text-xs text-slate-200">
+      {/* Chat icon (unread badge + dropdown window) */}
+      <ChatLauncher />
+
       <span className="hidden sm:inline">
         {session.user?.name ?? session.user?.email ?? "Signed in"}
       </span>
