@@ -1,6 +1,7 @@
+// src/features/layout/components/AppShell.tsx
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import BaseBox from "@/components/MUI/Layout/BaseBox";
 import {
   BaseAppBar,
@@ -14,9 +15,18 @@ import { IconButton } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import { GlobalLoadingDivider } from "@/features/layout/components/GlobalLoadingDivider";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import { UserPreferencesMenu } from "@/features/layout/components/UserPreferencesMenu";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { prefs, setPref } = useUserPreferences();
+
+  // Persisted sidebar state: open = !collapsed
+  const sidebarOpen = !prefs.sidebarCollapsed;
+
+  const handleToggleSidebar = () => {
+    setPref("sidebarCollapsed", !prefs.sidebarCollapsed);
+  };
 
   return (
     <BaseBox
@@ -42,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <IconButton
             size="small"
-            onClick={() => setSidebarOpen((prev) => !prev)}
+            onClick={handleToggleSidebar}
             aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             {sidebarOpen ? <ChevronLeftIcon /> : <MenuIcon />}
@@ -54,8 +64,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <BaseBox sx={{ flex: 1 }} />
 
-          {/* Auth controls live in the header now */}
+          {/* Auth controls + user preferences live in the header */}
           <AuthBar />
+          <UserPreferencesMenu />
         </BaseToolbar>
         <GlobalLoadingDivider />
       </BaseAppBar>
@@ -83,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </BaseBox>
       </BaseBox>
 
-      {/* Footer (theme selector) */}
+      {/* Footer (no more theme selector – that moved to the avatar menu) */}
       <Footer />
     </BaseBox>
   );

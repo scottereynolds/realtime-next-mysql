@@ -1,31 +1,77 @@
+// src/features/layout/components/Footer.tsx
 "use client";
 
-import { useCallback } from "react";
-import { ThemeId } from "@/types/ui";
-import { FormControl, InputLabel, MenuItem } from "@mui/material";
-import { useThemeMode } from "@/contexts/ThemeContext";
+import { useEffect, useState } from "react";
 import BaseBox from "@/components/MUI/Layout/BaseBox";
-import { BaseSelect } from "@/components/MUI/Inputs/BaseSelect";
-import WbSunnyIcon from "@mui/icons-material/WbSunny";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
-import AcUnitIcon from "@mui/icons-material/AcUnit";
-import ForestIcon from "@mui/icons-material/Forest";
-import WaterIcon from "@mui/icons-material/Water";
-import MemoryIcon from "@mui/icons-material/Memory";
-import SailingIcon from "@mui/icons-material/Sailing";
-import SportsFootballIcon from "@mui/icons-material/SportsFootball";
-import IcecreamIcon from "@mui/icons-material/Icecream";
+import { BaseTypography } from "@/components/MUI/DataDisplay/BaseTypography";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+
+function formatDateTime(
+  date: Date,
+  opts: { dateFormat: "mdy" | "dmy" | "ymd"; timeFormat: "12h" | "24h" },
+) {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+
+  let datePart: string;
+  switch (opts.dateFormat) {
+    case "dmy":
+      datePart = `${day}/${month}/${year}`;
+      break;
+    case "ymd":
+      datePart = `${year}-${month}-${day}`;
+      break;
+    case "mdy":
+    default:
+      datePart = `${month}/${day}/${year}`;
+      break;
+  }
+
+  let hours = date.getHours();
+  const minutes = pad(date.getMinutes());
+  let suffix = "";
+
+  if (opts.timeFormat === "12h") {
+    suffix = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+  }
+
+  const hoursStr = pad(hours);
+
+  const timePart =
+    opts.timeFormat === "12h"
+      ? `${hoursStr}:${minutes} ${suffix}`
+      : `${hoursStr}:${minutes}`;
+
+  return `${datePart} ${timePart}`;
+}
 
 export default function Footer() {
-  const { mode, setMode } = useThemeMode();
+  const { prefs } = useUserPreferences();
+  const [formatted, setFormatted] = useState<string>(""); // same on server + first client render
 
-  const handleChange = useCallback(
-    (event: any) => {
-      const value = event.target.value as ThemeId;
-      setMode(value);
-    },
-    [setMode],
-  );
+  useEffect(() => {
+    function update() {
+      const now = new Date();
+      setFormatted(
+        formatDateTime(now, {
+          dateFormat: prefs.dateFormat,
+          timeFormat: prefs.timeFormat,
+        }),
+      );
+    }
+
+    // initial run
+    update();
+
+    const id = setInterval(update, 1000);
+
+    return () => clearInterval(id);
+  }, [prefs.dateFormat, prefs.timeFormat]);
 
   return (
     <BaseBox
@@ -35,86 +81,20 @@ export default function Footer() {
         paddingY: 1,
         paddingX: 2,
         display: "flex",
-        justifyContent: "flex-end",
+        justifyContent: "space-between",
         alignItems: "center",
         gap: 1.5,
         backgroundColor: "rgb(var(--background))",
         color: "rgb(var(--foreground))",
       }}
     >
-      <FormControl size="small" sx={{ minWidth: 180 }}>
-        <InputLabel id="theme-select-label">Theme</InputLabel>
-        <BaseSelect
-          labelId="theme-select-label"
-          id="theme-select"
-          value={mode}
-          label="Theme"
-          onChange={handleChange}
-        >
-          <MenuItem value="light">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <WbSunnyIcon fontSize="small" />
-              <span>Light</span>
-            </BaseBox>
-          </MenuItem>
+      <BaseTypography variant="body2">
+        Realtime Next + MySQL Starter
+      </BaseTypography>
 
-          <MenuItem value="dark">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <DarkModeIcon fontSize="small" />
-              <span>Dark (Mono)</span>
-            </BaseBox>
-          </MenuItem>
-
-          <MenuItem value="arctic">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <AcUnitIcon fontSize="small" />
-              <span>Arctic</span>
-            </BaseBox>
-          </MenuItem>
-
-          <MenuItem value="forest">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <ForestIcon fontSize="small" />
-              <span>Forest</span>
-            </BaseBox>
-          </MenuItem>
-
-          <MenuItem value="ocean">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <WaterIcon fontSize="small" />
-              <span>Ocean</span>
-            </BaseBox>
-          </MenuItem>
-
-          <MenuItem value="cyber">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <MemoryIcon fontSize="small" />
-              <span>Cyber</span>
-            </BaseBox>
-          </MenuItem>
-
-          <MenuItem value="pirates">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <SailingIcon fontSize="small" />
-              <span>Pirates</span>
-            </BaseBox>
-          </MenuItem>
-
-          <MenuItem value="packers">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <SportsFootballIcon fontSize="small" />
-              <span>Packers</span>
-            </BaseBox>
-          </MenuItem>
-
-          <MenuItem value="barbie">
-            <BaseBox sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <IcecreamIcon fontSize="small" />
-              <span>Barbie</span>
-            </BaseBox>
-          </MenuItem>
-        </BaseSelect>
-      </FormControl>
+      <BaseTypography variant="caption" sx={{ opacity: 0.8 }}>
+        {formatted}
+      </BaseTypography>
     </BaseBox>
   );
 }

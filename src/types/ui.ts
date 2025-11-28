@@ -130,3 +130,34 @@ export interface LoadingContextValue {
   startLoading: (channel?: LoadingChannel) => void;
   stopLoading: (channel?: LoadingChannel) => void;
 }
+
+export type TableDensity = "comfortable" | "compact";
+
+export type TimeFormat = "12h" | "24h";
+export type DateFormat = "mdy" | "dmy" | "ymd";
+
+export interface UserPreferences {
+  theme: ThemeId;
+  language: string;
+  sidebarCollapsed: boolean;
+  defaultPageSize: number;
+  tableDensity: TableDensity;
+  preferredLanguage: string; // seed for future i18n, e.g. "en"
+  timeFormat: TimeFormat;
+  dateFormat: DateFormat;
+  confirmBeforeDelete: boolean;
+  startPage: string; // e.g. "/", "/messages", "/admin"
+}
+
+export const defaultUserPreferences: UserPreferences = {
+  theme: "dark",
+  language: "en",
+  sidebarCollapsed: false,
+  defaultPageSize: 25,
+  tableDensity: "comfortable",
+  preferredLanguage: "en",
+  timeFormat: "12h",
+  dateFormat: "mdy",
+  confirmBeforeDelete: true,
+  startPage: "/",
+};

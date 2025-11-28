@@ -1,23 +1,37 @@
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
+import Link from "next/link";
 
 export function AuthBar() {
   const { data: session, status } = useSession();
 
   if (status === "loading") {
     return (
-      <div className="flex justify-end p-2 text-sm text-gray-500">
+      <div className="flex items-center justify-end px-2 text-xs text-slate-400">
         Checking session…
       </div>
     );
   }
 
+  // Not authenticated: show Login / Register + GitHub option
   if (!session) {
     return (
-      <div className="flex justify-end p-2">
+      <div className="flex items-center justify-end gap-2 px-2">
+        <Link href="/login">
+          <button className="rounded border border-slate-500 px-3 py-1 text-xs font-medium text-slate-100 hover:bg-slate-800">
+            Log in
+          </button>
+        </Link>
+
+        <Link href="/register">
+          <button className="rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700">
+            Register
+          </button>
+        </Link>
+
         <button
-          className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+          className="hidden md:inline-flex items-center rounded border border-slate-600 px-3 py-1 text-xs text-slate-100 hover:bg-slate-800"
           onClick={() => signIn("github")}
         >
           Sign in with GitHub
@@ -26,12 +40,15 @@ export function AuthBar() {
     );
   }
 
+  // Authenticated: keep it minimal; detailed info + prefs live in the avatar menu
   return (
-    <div className="flex items-center justify-end gap-3 p-2 text-sm">
-      <span>Signed in as {session.user?.email ?? session.user?.name}</span>
+    <div className="flex items-center justify-end gap-3 px-2 text-xs text-slate-200">
+      <span className="hidden sm:inline">
+        {session.user?.name ?? session.user?.email ?? "Signed in"}
+      </span>
       <button
-        className="rounded bg-gray-700 px-3 py-1 text-sm text-white hover:bg-gray-800"
-        onClick={() => signOut()}
+        className="rounded border border-slate-600 px-3 py-1 text-xs text-slate-100 hover:bg-slate-800"
+        onClick={() => signOut({ callbackUrl: "/" })}
       >
         Sign out
       </button>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ThemeRegistry from "@/features/layout/components/ThemeRegistry";
 import { AuthSessionProvider } from "@/features/auth/components/AuthSessionProvider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { QueryProvider } from "@/app/QueryProvider";
@@ -9,6 +10,7 @@ import { DialogProvider } from "@/contexts/DialogContext";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 import { RouteLoadingWatcher } from "@/components/Routing/RouteLoadingWatcher";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { UserPreferencesProvider } from "@/contexts/UserPreferencesContext";
 
 export const metadata: Metadata = {
   title: "Realtime Next + MySQL Starter",
@@ -23,24 +25,28 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-app text-app">
-        <ThemeProvider>
-          <AuthProvider>
-            <LoadingProvider>
-              <SnackbarProvider>
-                <DialogProvider>
-                  <AuthSessionProvider>
-                    <QueryProvider>
-                      <AppShell>
-                        <RouteLoadingWatcher />
-                        {children}
-                      </AppShell>
-                    </QueryProvider>
-                  </AuthSessionProvider>
-                </DialogProvider>
-              </SnackbarProvider>
-            </LoadingProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <ThemeRegistry>
+          <ThemeProvider>
+            <UserPreferencesProvider>
+              <AuthProvider>
+                <LoadingProvider>
+                  <SnackbarProvider>
+                    <DialogProvider>
+                      <AuthSessionProvider>
+                        <QueryProvider>
+                            <AppShell>
+                              <RouteLoadingWatcher />
+                              {children}
+                            </AppShell>
+                        </QueryProvider>
+                      </AuthSessionProvider>
+                    </DialogProvider>
+                  </SnackbarProvider>
+                </LoadingProvider>
+              </AuthProvider>
+            </UserPreferencesProvider>
+          </ThemeProvider>
+        </ThemeRegistry>
       </body>
     </html>
   );

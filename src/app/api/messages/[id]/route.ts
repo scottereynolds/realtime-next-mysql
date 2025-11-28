@@ -1,26 +1,36 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // adjust path if needed
+import { prisma } from "@/lib/prisma";
+
+type RouteParams = {
+  id: string;
+};
 
 export async function DELETE(
-  _req: Request,
-  context: { params: Promise<{ id: string }> },
+  req: Request,
+  context: { params: Promise<RouteParams> },
 ) {
-  // Next 16: params is a Promise – unwrap it first
-  const { id: idParam } = await context.params;
+  const { id } = await context.params;
 
-  const id = Number(idParam);
+  const numericId = Number(id);
 
-  if (Number.isNaN(id)) {
+  if (!Number.isInteger(numericId)) {
     return NextResponse.json(
-      { message: "Invalid message id" },
+      { error: "Invalid message id" },
       { status: 400 },
     );
   }
 
-  await prisma.message.delete({
-    where: { id },
-  });
+  try {
+    await prisma.message.delete({
+      where: { id: numericId },
+    });
 
-  // 204 No Content – no body needed
-  return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting message", error);
+    return NextResponse.json(
+      { error: "Failed to delete message" },
+      { status: 500 },
+    );
+  }
 }

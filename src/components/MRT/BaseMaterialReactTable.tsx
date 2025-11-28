@@ -6,6 +6,7 @@ import {
   type MaterialReactTableProps,
 } from "material-react-table";
 import { clsx } from "clsx";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 export type BaseMaterialReactTableProps<TData extends MRT_RowData> =
   MaterialReactTableProps<TData> & {
@@ -21,19 +22,39 @@ export type BaseMaterialReactTableProps<TData extends MRT_RowData> =
  * Thin wrapper around MaterialReactTable that:
  * - Applies our Tailwind + CSS variable based theming
  * - Provides a consistent outer container style
+ * - Injects user preferences for density + default page size
  * - Still allows you to override all MRT props as usual
  */
 export function BaseMaterialReactTable<TData extends MRT_RowData>(
   props: BaseMaterialReactTableProps<TData>,
 ) {
+  const { prefs } = useUserPreferences();
+
   const {
     containerClassName,
     muiTablePaperProps,
     muiTableContainerProps,
     muiTableHeadCellProps,
     muiTableBodyCellProps,
+    initialState,
     ...rest
   } = props;
+
+  // Merge initialState with user preferences **without** upsetting TS.
+  // We treat it as a plain object, then cast at the very end when we
+  // pass everything into <MaterialReactTable />.
+  const mergedInitialState = {
+    ...(initialState ?? {}),
+    density:
+      initialState?.density ??
+      (prefs.tableDensity === "compact" ? "compact" : "comfortable"),
+    pagination: {
+      // MRT/TanStack expect both pageIndex & pageSize to be present.
+      pageIndex: initialState?.pagination?.pageIndex ?? 0,
+      pageSize:
+        initialState?.pagination?.pageSize ?? prefs.defaultPageSize ?? 25,
+    },
+  };
 
   // Default Paper props with theme variables
   const mergedPaperProps = {
@@ -65,7 +86,6 @@ export function BaseMaterialReactTable<TData extends MRT_RowData>(
     },
   };
 
-  // Only provide defaults if user didn't pass anything
   const defaultHeadCellProps =
     muiTableHeadCellProps ??
     ({
@@ -88,8 +108,13 @@ export function BaseMaterialReactTable<TData extends MRT_RowData>(
       },
     } as any);
 
-  // Tell TS "trust me, this matches one of MRT's union branches"
-  const mrtProps = rest as MaterialReactTableProps<TData>;
+  // Build the props object we’ll spread into MRT.
+  // We keep it strongly typed here, and then relax it at the call site
+  // to avoid the union-type "initialState is not allowed with table" issue.
+  const mrtProps: MaterialReactTableProps<TData> = {
+    ...rest,
+    initialState: mergedInitialState as any,
+  };
 
   return (
     <div
@@ -100,7 +125,7 @@ export function BaseMaterialReactTable<TData extends MRT_RowData>(
       )}
     >
       <MaterialReactTable
-        {...mrtProps}
+        {...(mrtProps as any)}
         muiTablePaperProps={mergedPaperProps as any}
         muiTableContainerProps={mergedContainerProps as any}
         muiTableHeadCellProps={defaultHeadCellProps}

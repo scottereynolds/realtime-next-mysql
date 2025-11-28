@@ -2,6 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  user
+  administrator
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -21,9 +26,10 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-
   accounts      Account[]
   sessions      Session[]
+  role          Role     @default(user)
+  passwordHash  String?  @map("password_hash")
 }
 
 model Account {
