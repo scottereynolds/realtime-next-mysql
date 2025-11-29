@@ -10,7 +10,7 @@ import type {
   AdminRole,
   AdminUserFormMode,
   AdminUserFormValues,
-} from "@/features/admin/users/types/types";
+} from "@/features/admin/users/types/adminUserTypes";
 
 interface AdminUserFormModalProps {
   open: boolean;

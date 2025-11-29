@@ -10,7 +10,7 @@ import Chip from "@mui/material/Chip";
 
 import { BaseButton } from "@/components/MUI/Inputs/BaseButton";
 import { BaseMaterialReactTable } from "@/components/MRT/BaseMaterialReactTable";
-import type { AdminUser } from "@/features/admin/users/types/types";
+import type { AdminUser } from "@/features/admin/users/types/adminUserTypes";
 import { useDialog } from "@/contexts/DialogContext";
 import { BaseStack } from "@/components/MUI/Layout/BaseStack";
 

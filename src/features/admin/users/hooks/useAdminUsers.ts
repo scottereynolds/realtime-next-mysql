@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { AdminUser, AdminUserFormValues } from "@/features/admin/users/types/types";
+import type { AdminUser, AdminUserFormValues } from "@/features/admin/users/types/adminUserTypes";
 
 interface UseAdminUsersResult {
   users: AdminUser[];

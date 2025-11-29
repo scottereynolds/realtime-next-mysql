@@ -1,3 +1,4 @@
+// src/features/admin/users/components/AdminUsersClient.tsx
 "use client";
 
 import { useState } from "react";
@@ -10,7 +11,7 @@ import type {
   AdminUser,
   AdminUserFormMode,
   AdminUserFormValues,
-} from "@/features/admin/users/types/types";
+} from "@/features/admin/users/types/adminUserTypes";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useLoading } from "@/contexts/LoadingContext";
 import { BaseButton } from "@/components/MUI/Inputs/BaseButton";
@@ -159,47 +160,59 @@ export default function AdminUsersClient() {
       : undefined;
 
   return (
-    <div className="space-y-4">
-      {isImpersonating && (
-        <div className="flex items-center justify-between rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          <span>
-            Impersonating <strong>{effectiveEmail}</strong>
-          </span>
-          <BaseButton
-            size="small"
-            variant="outlined"
-            color="warning"
-            onClick={handleStopImpersonating}
-          >
-            Stop impersonating
-          </BaseButton>
-        </div>
-      )}
+    <div className="p-4 space-y-4">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          User Management
+        </h1>
+        <p className="text-sm text-slate-500">
+          Administrators can view, create, edit, and remove users from the
+          system here.
+        </p>
+      </header>
 
-      {error && (
-        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      <div className="space-y-4">
+        {isImpersonating && (
+          <div className="flex items-center justify-between rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <span>
+              Impersonating <strong>{effectiveEmail}</strong>
+            </span>
+            <BaseButton
+              size="small"
+              variant="outlined"
+              color="warning"
+              onClick={handleStopImpersonating}
+            >
+              Stop impersonating
+            </BaseButton>
+          </div>
+        )}
 
-      <AdminUsersTable
-        users={users}
-        isLoading={isLoading}
-        onCreate={handleCreateClick}
-        onEdit={handleEditClick}
-        onDelete={handleDeleteClick}
-        onImpersonate={handleImpersonate}
-        currentUserId={currentUserId}
-      />
+        {error && (
+          <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
-      <AdminUserFormModal
-        open={isModalOpen}
-        mode={mode}
-        initialValues={initialValues}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-      />
+        <AdminUsersTable
+          users={users}
+          isLoading={isLoading}
+          onCreate={handleCreateClick}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteClick}
+          onImpersonate={handleImpersonate}
+          currentUserId={currentUserId}
+        />
+
+        <AdminUserFormModal
+          open={isModalOpen}
+          mode={mode}
+          initialValues={initialValues}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+        />
+      </div>
     </div>
   );
 }
