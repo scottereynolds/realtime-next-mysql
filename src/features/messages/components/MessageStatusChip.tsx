@@ -1,6 +1,6 @@
 import { BaseChip } from "@/components/MUI/DataDisplay/BaseChip";
 
-export type MessageStatus = "sent" | "delivered" | "seen";
+export type MessageStatus = "sending" | "sent" | "delivered" | "seen"
 
 interface Props {
   status: MessageStatus;
@@ -10,6 +10,10 @@ const STATUS_CONFIG: Record<
   MessageStatus,
   { label: string; color: "default" | "primary" | "success" }
 > = {
+  sending: {
+    label: "Sending…",
+    color: "default",
+  },
   sent: {
     label: "Sent",
     color: "default",

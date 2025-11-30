@@ -6,6 +6,8 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 
+import { UnreadSummaryResponse } from "@/features/messages/types/messagesTypes";
+
 import ChatWindow from "@/features/messages/components/ChatWindow";
 import { useSocket } from "@/hooks/useSocket";
 import BaseIconButton from "@/components/MUI/Inputs/BaseIconButton";
@@ -13,15 +15,6 @@ import { BaseBadge } from "@/components/MUI/DataDisplay/BaseBadge";
 import { BaseTooltip } from "@/components/MUI/DataDisplay/BaseTooltip";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { SOCKET_EVENTS } from "@/types/socket";
-
-type UnreadSummaryResponse = {
-  totalUnread: number;
-  conversations: {
-    conversationId: number;
-    unreadCount: number;
-  }[];
-  userId?: string; // present on socket payload, not on HTTP response
-};
 
 function debugLog(label: string, payload: any) {
   // eslint-disable-next-line no-console

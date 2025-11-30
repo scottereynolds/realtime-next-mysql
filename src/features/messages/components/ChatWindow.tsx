@@ -13,6 +13,13 @@ import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import { useSession } from "next-auth/react";
 
+import {
+  ConversationListItem,
+  ChatMessage,
+  MessagesByConversation,
+  SimpleUser,
+} from "@/features/messages/types/messagesTypes";
+
 import BaseBox from "@/components/MUI/Layout/BaseBox";
 import { BaseTextField } from "@/components/MUI/Inputs/BaseTextField";
 import BaseIconButton from "@/components/MUI/Inputs/BaseIconButton";
@@ -30,55 +37,6 @@ import AddCommentIcon from "@mui/icons-material/AddComment";
 interface ChatWindowProps {
   open: boolean;
   onClose: () => void;
-}
-
-type ConversationType = "direct" | "group";
-
-interface ConversationLatestMessage {
-  id: number;
-  content: string;
-  createdAt: string;
-  sender: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  } | null;
-}
-
-interface ConversationParticipantUser {
-  id: string;
-  name: string | null;
-  image: string | null;
-}
-
-interface ConversationListItem {
-  id: number;
-  type: ConversationType;
-  title: string | null;
-  updatedAt: string;
-  unreadCount: number;
-  latestMessage: ConversationLatestMessage | null;
-  otherParticipants: ConversationParticipantUser[];
-}
-
-interface ChatMessage {
-  id: number;
-  content: string;
-  createdAt: string;
-  sender: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  } | null;
-}
-
-type MessagesByConversation = Record<number, ChatMessage[]>;
-
-interface SimpleUser {
-  id: string;
-  name: string | null;
-  email: string | null;
-  image: string | null;
 }
 
 export default function ChatWindow({ open, onClose }: ChatWindowProps) {
@@ -328,14 +286,14 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
     }
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       void handleSendMessage();
     }
   };
 
-  // --- New conversation helpers ---
+  // --- Conversation helpers ---
 
   const openNewConversation = async () => {
     setIsNewConversationMode(true);
@@ -394,7 +352,7 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
         return;
       }
 
-      // ✅ Switch UI out of "new conversation" mode and into the new chat
+      // Switch UI out of "new conversation" mode and into the new chat
       setIsNewConversationMode(false);
       setShowConversations(false); // collapse sidebar
       setActiveConversationId(newConversationId);
@@ -422,7 +380,7 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
   };
 
   const handleNewConversationKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
+    event: KeyboardEvent<HTMLDivElement>,
   ) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -513,7 +471,7 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
         </BaseBox>
 
         {/* Body */}
-        <BaseBox className="flex flex-1 overflow-hidden bg-slate-50">
+        <BaseBox className="flex flex-1 overflow-hidden">
           {/* Conversations list (collapsible) */}
           {showConversations && (
             <BaseBox className="w-40 border-r border-slate-200 flex flex-col overflow-hidden bg-slate-50/80">
@@ -562,7 +520,7 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
                       </Avatar>
                       <BaseBox className="flex-1 overflow-hidden">
                         <BaseBox className="flex items-center justify-between gap-1">
-                          <span className="font-semibold truncate">
+                          <span className="font-semibold truncate text-slate-500">
                             {displayName}
                           </span>
                           {c.unreadCount > 0 && (
@@ -679,58 +637,74 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
                 </BaseBox>
 
                 {/* Current chat input row – compact & pinned to bottom */}
-                <BaseBox className="border-t border-slate-200 px-2 py-2 flex items-center gap-2 bg-white">
-                  <BaseTextField
-                    fullWidth
-                    size="small"
-                    placeholder={
-                      activeConversation
-                        ? "Type a message…"
-                        : "Select a conversation to start chatting…"
-                    }
-                    disabled={!activeConversation || isSending}
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="rounded-full"
-                    slotProps={{
-                      input: {
-                        className: "py-0.5 px-3 text-[11px]",
-                      },
-                    }}
-                  />
-                  <BaseTooltip title="Send">
-                    <span>
-                      <BaseIconButton
-                        size="small"
-                        className="p-1 rounded-full shadow-sm"
-                        sx={{
-                          backgroundColor: "#2563eb", // solid blue, independent of theme
-                          color: "#ffffff",
-                          "&:hover": {
-                            backgroundColor: "#1d4ed8",
-                          },
-                          "&.Mui-disabled": {
-                            backgroundColor: "rgba(148, 163, 184, 0.7)",
-                            color: "#f9fafb",
-                          },
-                        }}
-                        disabled={
-                          !activeConversation ||
-                          isSending ||
-                          !messageInput.trim()
-                        }
-                        onClick={() => void handleSendMessage()}
-                      >
-                        <SendIcon fontSize="small" />
-                      </BaseIconButton>
-                    </span>
-                  </BaseTooltip>
+                <BaseBox className="border-t border-slate-200 px-2 py-2 bg-white">
+                  {/* Input + send button row */}
+                  <BaseBox className="flex items-center gap-2">
+                    <BaseTextField
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={1}
+                      maxRows={4}
+                      placeholder={
+                        activeConversation
+                          ? "Type a message…"
+                          : "Select a conversation to start chatting…"
+                      }
+                      disabled={!activeConversation || isSending}
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="rounded-full"
+                      slotProps={{
+                        input: {
+                          className:
+                            "py-1 px-3 text-[11px] leading-snug resize-none",
+                        },
+                      }}
+                    />
+                    <BaseTooltip title="Send">
+                      <span>
+                        <BaseIconButton
+                          size="small"
+                          className="p-1 rounded-full shadow-sm"
+                          sx={{
+                            backgroundColor: "#2563eb", // solid blue, independent of theme
+                            color: "#ffffff",
+                            "&:hover": {
+                              backgroundColor: "#1d4ed8",
+                            },
+                            "&.Mui-disabled": {
+                              backgroundColor: "rgba(148, 163, 184, 0.7)",
+                              color: "#f9fafb",
+                            },
+                          }}
+                          disabled={
+                            !activeConversation ||
+                            isSending ||
+                            !messageInput.trim()
+                          }
+                          onClick={() => void handleSendMessage()}
+                        >
+                          <SendIcon fontSize="small" />
+                        </BaseIconButton>
+                      </span>
+                    </BaseTooltip>
+                  </BaseBox>
+
+                  {/* Subtle global sending indicator */}
+                  {isSending && (
+                    <BaseBox className="flex justify-end mt-1 pr-1">
+                      <span className="text-[10px] italic text-slate-400">
+                        Sending…
+                      </span>
+                    </BaseBox>
+                  )}
                 </BaseBox>
               </>
             ) : (
-              // NEW CONVERSATION PANEL
-              <BaseBox className="flex-1 flex flex-col bg-slate-50">
+              // CONVERSATION PANEL
+              <BaseBox className="flex-1 flex	col bg-slate-50">
                 <BaseBox className="flex-1 overflow-y-auto px-3 py-2">
                   <BaseBox className="mb-3">
                     <div className="text-xs font-semibold text-slate-700 mb-1">
