@@ -9,8 +9,8 @@ import {
   type KeyboardEvent,
 } from "react";
 import Avatar from "@mui/material/Avatar";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import { BaseAutocomplete } from "@/components/MUI/Inputs/BaseAutocomplete";
+
 import { useSession } from "next-auth/react";
 
 import {
@@ -26,6 +26,8 @@ import BaseIconButton from "@/components/MUI/Inputs/BaseIconButton";
 import { BaseTooltip } from "@/components/MUI/DataDisplay/BaseTooltip";
 import { BasePaper } from "@/components/MUI/Surface/BasePaper";
 import { useSocket } from "@/hooks/useSocket";
+
+import styles from "@/features/messages/styles/message.module.css";
 
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -61,6 +63,18 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
   const [allUsers, setAllUsers] = useState<SimpleUser[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [newConversationMessage, setNewConversationMessage] = useState("");
+
+  const selectedUsers = useMemo(
+    () => allUsers.filter((u) => selectedUserIds.includes(u.id)),
+    [allUsers, selectedUserIds],
+  );
+
+  const handleParticipantsChange = (
+    _event: unknown,
+    value: SimpleUser[],
+  ) => {
+    setSelectedUserIds(value.map((u) => u.id));
+  };
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -315,14 +329,6 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
         // ignore for now
       }
     }
-  };
-
-  const toggleSelectedUser = (userId: string) => {
-    setSelectedUserIds((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId],
-    );
   };
 
   const handleCreateConversation = async () => {
@@ -655,7 +661,7 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      className="rounded-full"
+                      className={styles.roundedFull}
                       slotProps={{
                         input: {
                           className:
@@ -704,64 +710,68 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
               </>
             ) : (
               // CONVERSATION PANEL
-              <BaseBox className="flex-1 flex	col bg-slate-50">
+              <BaseBox className="flex-1 flex	flex-col bg-slate-50">
                 <BaseBox className="flex-1 overflow-y-auto px-3 py-2">
                   <BaseBox className="mb-3">
                     <div className="text-xs font-semibold text-slate-700 mb-1">
                       Choose participants
                     </div>
-                    <div className="text-[11px] text-slate-500">
-                      Select one or more users to start a conversation with.
+                    <div className="text-[11px] text-slate-500 mb-2">
+                      Type to search and select one or more users.
                     </div>
                   </BaseBox>
 
-                  {allUsers.length === 0 && (
+                  {allUsers.length === 0 ? (
                     <BaseBox className="text-xs text-slate-400 py-2">
                       No other users found.
                     </BaseBox>
-                  )}
+                  ) : (
+                    <BaseAutocomplete<SimpleUser, true, false, false>
+                      multiple
+                      options={allUsers}
+                      value={selectedUsers}
+                      className={styles.roundedFull}
+                      onChange={handleParticipantsChange}
+                      disableCloseOnSelect
+                      filterSelectedOptions
+                      getOptionLabel={(user) =>
+                        user.name || user.email || user.id.substring(0, 8)
+                      }
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      renderOption={(props, option) => {
+                        const label =
+                          option.name || option.email || option.id.substring(0, 8);
 
-                  {allUsers.map((user) => {
-                    const label =
-                      user.name || user.email || user.id.substring(0, 8);
-
-                    return (
-                      <BaseBox
-                        key={user.id}
-                        className="flex items-center justify-between border-b border-slate-100 py-1"
-                      >
-                        <BaseBox className="flex items-center gap-2">
-                          <Avatar
-                            sx={{ width: 24, height: 24, fontSize: 12 }}
-                            src={user.image ?? undefined}
-                          >
-                            {label.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <BaseBox className="flex flex-col">
-                            <span className="text-xs text-slate-800">
-                              {label}
-                            </span>
-                            {user.email && (
-                              <span className="text-[10px] text-slate-500">
-                                {user.email}
-                              </span>
-                            )}
-                          </BaseBox>
-                        </BaseBox>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              size="small"
-                              checked={selectedUserIds.includes(user.id)}
-                              onChange={() => toggleSelectedUser(user.id)}
-                            />
-                          }
-                          label=""
-                          sx={{ m: 0 }}
+                        return (
+                          <li {...props} key={option.id}>
+                            <BaseBox className="flex items-center gap-2">
+                              <Avatar
+                                sx={{ width: 24, height: 24, fontSize: 12 }}
+                                src={option.image ?? undefined}
+                              >
+                                {label.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <BaseBox className="flex flex-col">
+                                <span className="text-xs text-slate-800">{label}</span>
+                                {option.email && (
+                                  <span className="text-[10px] text-slate-500">
+                                    {option.email}
+                                  </span>
+                                )}
+                              </BaseBox>
+                            </BaseBox>
+                          </li>
+                        );
+                      }}
+                      renderInput={(params) => (
+                        <BaseTextField
+                          {...params}
+                          size="small"
+                          placeholder="Search participants…"
                         />
-                      </BaseBox>
-                    );
-                  })}
+                      )}
+                    />
+                  )}
                 </BaseBox>
 
                 {/* First message + icon submit at bottom */}
@@ -773,7 +783,7 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
                     value={newConversationMessage}
                     onChange={(e) => setNewConversationMessage(e.target.value)}
                     onKeyDown={handleNewConversationKeyDown}
-                    className="rounded-full"
+                    className={styles.roundedFull}
                     slotProps={{
                       input: {
                         className: "py-0.5 px-3 text-[11px]",

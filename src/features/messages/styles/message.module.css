@@ -1,0 +1,16 @@
+/* This class is applied to the TextField's root (FormControl) */
+.roundedFull {
+  border-radius: 9999px; /* pill shape */
+  overflow: hidden;      /* clip inner corners */
+}
+
+/* Make the actual input match the pill shape */
+.roundedFull :global(.MuiOutlinedInput-root),
+.roundedFull :global(.MuiInputBase-root) {
+  border-radius: inherit;
+}
+
+/* And the outline too */
+.roundedFull :global(.MuiOutlinedInput-notchedOutline) {
+  border-radius: inherit;
+}
