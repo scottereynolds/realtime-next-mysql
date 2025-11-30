@@ -1,6 +1,8 @@
+// src/app/api/messages/conversations/[id]/read/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { broadcastMessageSeen } from "@/lib/messagesSocket";
 
 export async function POST(
   _req: NextRequest,
@@ -41,12 +43,8 @@ export async function POST(
       );
     }
 
-    await prisma.conversationParticipant.update({
-      where: { id: participant.id },
-      data: {
-        lastReadAt: new Date(),
-      },
-    });
+    // 🔔 Update lastReadAt + broadcast message:seen + unread summary
+    await broadcastMessageSeen(conversationId, userId);
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {

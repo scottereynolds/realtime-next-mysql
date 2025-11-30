@@ -61,4 +61,61 @@ export interface MessageDeletedEvent {
 export type MessageSocketEvent =
   | MessageCreatedEvent
   | MessageUpdatedEvent
-  | MessageDeletedEvent;
+  | MessageDeletedEvent
+  | MessageDeliveredEvent
+  | MessageSeenEvent
+  | MessagesUnreadSummaryEvent
+  | ConversationCreatedEvent
+  | UserTypingEvent
+  | UserStoppedTypingEvent;
+
+ /**
+ * How this message is delivered/seen from the perspective of the *current* user
+ */
+export type MessageDeliveryStatus = "sent" | "delivered" | "seen";
+
+export interface MessageDeliveredEvent {
+  type: "message:delivered";
+  messageId: number;
+  conversationId: number;
+  recipientId: string;
+  deliveredAt: string; // ISO timestamp
+}
+
+export interface MessageSeenEvent {
+  type: "message:seen";
+  conversationId: number;
+  userId: string;
+  lastReadAt: string; // ISO timestamp; comes from ConversationParticipant.lastReadAt
+}
+
+export interface ConversationUnreadSummary {
+  conversationId: number;
+  unreadCount: number;
+}
+
+export interface MessagesUnreadSummaryEvent {
+  type: "messages:unreadSummary";
+  totalUnread: number;
+  conversations: ConversationUnreadSummary[];
+}
+
+export interface ConversationCreatedEvent {
+  type: "conversation:created";
+  conversationId: number;
+  // Optional extra metadata if you want it later:
+  conversationType?: "direct" | "group";
+  title?: string | null;
+}
+
+export interface UserTypingEvent {
+  type: "user:typing";
+  conversationId: number;
+  userId: string;
+}
+
+export interface UserStoppedTypingEvent {
+  type: "user:stoppedTyping";
+  conversationId: number;
+  userId: string;
+}

@@ -67,10 +67,39 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
   callbacks: {
     // JWT = single source of truth (for auth() and useSession().update)
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }) {
       // Initial sign-in (credentials or GitHub)
       if (user) {
-        const authUser = user as any;
+        let authUser = user as any;
+
+        // 🔄 Normalize GitHub users to a Prisma User row by email
+        if (account?.provider === "github") {
+          const email = authUser.email as string | undefined;
+
+          if (email) {
+            // Try to find an existing Prisma user for this email
+            let dbUser = await prisma.user.findUnique({
+              where: { email },
+            });
+
+            // Optionally create if missing (only if that makes sense for you)
+            if (!dbUser) {
+              dbUser = await prisma.user.create({
+                data: {
+                  email,
+                  name: authUser.name ?? null,
+                  image: authUser.image ?? null,
+                  // If your Prisma schema has a `role` with default "user",
+                  // you don't need to set it explicitly here.
+                },
+              });
+            }
+
+            authUser = dbUser as any;
+          }
+        }
+
+        // For credentials users, `authUser` is already the Prisma row you return
         const userId = String(authUser.id);
         const role: AppRole = (authUser.role ?? "user") as AppRole;
 
@@ -87,7 +116,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           (token as any).realUserRole = role;
         }
 
-        // If we log in fresh, drop any stale impersonation
+        // Fresh login → clear any old impersonation
         (token as any).impersonatedUserId = null;
       }
 

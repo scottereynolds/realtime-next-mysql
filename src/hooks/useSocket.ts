@@ -1,3 +1,4 @@
+// src/hooks/useSocket.ts
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,54 +12,62 @@ let socketInstance: Socket | null = null;
  *
  * Returns a singleton Socket.IO client instance and wires it into
  * the global LoadingContext using the "socket" channel.
+ *
+ * This hook is deliberately "dumb": it does NOT mutate any React Query
+ * cache or handle feature-specific events. Individual features
+ * (ChatLauncher, ChatWindow, etc.) attach their own listeners.
  */
 export function useSocket() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const { startLoading, stopLoading } = useLoading();
 
   useEffect(() => {
-    if (!socketInstance) {
-      // First time we create the socket, mark socket-level loading as active.
-      startLoading("socket");
-
-      socketInstance = io("http://localhost:4000", {
-        autoConnect: true,
-      });
-
-      // Connected successfully
-      socketInstance.on("connect", () => {
-        stopLoading("socket");
-      });
-
-      // Connection error – stop loading so the bar doesn't hang forever
-      socketInstance.on("connect_error", () => {
-        stopLoading("socket");
-      });
-
-      // Reconnect attempts – show loading again
-      socketInstance.on("reconnect_attempt", () => {
-        startLoading("socket");
-      });
-
-      // Reconnected – stop loading
-      socketInstance.on("reconnect", () => {
-        stopLoading("socket");
-      });
-
-      // Disconnected – if not an intentional client disconnect, show loading
-      socketInstance.on("disconnect", (reason: string) => {
-        if (reason !== "io client disconnect") {
-          startLoading("socket");
-        }
-      });
+    // Reuse the existing singleton if it already exists
+    if (socketInstance) {
+      setSocket(socketInstance);
+      return;
     }
 
-    // All hook instances share the same socket instance
-    setSocket(socketInstance);
+    const url =
+      process.env.NEXT_PUBLIC_WS_SERVER_URL ?? "http://localhost:4000";
 
+    startLoading("socket");
+
+    const s: Socket = io(url, {
+      transports: ["websocket"],
+      withCredentials: true,
+    });
+
+    socketInstance = s;
+    setSocket(s);
+
+    const handleConnect = () => {
+      // eslint-disable-next-line no-console
+      console.log("[useSocket] Connected to", url, "as", s.id);
+      stopLoading("socket");
+    };
+
+    const handleConnectError = (err: Error) => {
+      // eslint-disable-next-line no-console
+      console.error("[useSocket] connect_error", err);
+      stopLoading("socket");
+    };
+
+    const handleDisconnect = (reason: string) => {
+      // eslint-disable-next-line no-console
+      console.log("[useSocket] Disconnected:", reason);
+    };
+
+    s.on("connect", handleConnect);
+    s.on("connect_error", handleConnectError);
+    s.on("disconnect", handleDisconnect);
+
+    // We keep the singleton alive for the whole app; no disconnect here.
+    // On unmount, just detach this hook's listeners.
     return () => {
-      // We keep the singleton alive for the whole app; no disconnect here.
-      // Listeners also stay attached since they operate on the global instance.
+      s.off("connect", handleConnect);
+      s.off("connect_error", handleConnectError);
+      s.off("disconnect", handleDisconnect);
     };
   }, [startLoading, stopLoading]);
 

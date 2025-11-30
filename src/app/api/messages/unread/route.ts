@@ -1,3 +1,4 @@
+// src/app/api/messages/unread/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
@@ -41,10 +42,12 @@ export async function GET() {
         createdAt: {
           gt: lastReadAt,
         },
-        // 🚫 don't count messages from the current user
-        senderId: {
-          not: currentUserId,
-        },
+        AND: [
+          // don't count messages from the current user
+          { senderId: { not: currentUserId } },
+          // don't count old/system messages with no sender
+          { NOT: { senderId: null } },
+        ],
       },
     });
 
@@ -54,7 +57,10 @@ export async function GET() {
     });
   }
 
-  const totalUnread = summary.reduce((sum, item) => sum + item.unreadCount, 0);
+  const totalUnread = summary.reduce(
+    (sum, item) => sum + item.unreadCount,
+    0,
+  );
 
   return NextResponse.json({
     totalUnread,
