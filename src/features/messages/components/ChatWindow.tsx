@@ -7,6 +7,7 @@ import {
   useState,
   useRef,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
 import Avatar from "@mui/material/Avatar";
 import { BaseAutocomplete } from "@/components/MUI/Inputs/BaseAutocomplete";
@@ -36,6 +37,15 @@ import ViewListIcon from "@mui/icons-material/ViewList";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import AddCommentIcon from "@mui/icons-material/AddComment";
 
+const MIN_WIDTH = 360;
+const MAX_WIDTH = 640;
+const MIN_HEIGHT = 360;
+const MAX_HEIGHT = 720;
+
+const SIDEBAR_MIN_WIDTH = 140;
+const SIDEBAR_DEFAULT_WIDTH = 160; // matches Tailwind w-40
+const SIDEBAR_MESSAGES_MIN_SPACE = 220; // minimum space to leave for messages
+
 interface ChatWindowProps {
   open: boolean;
   onClose: () => void;
@@ -63,6 +73,24 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
   const [allUsers, setAllUsers] = useState<SimpleUser[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [newConversationMessage, setNewConversationMessage] = useState("");
+
+  const [dimensions, setDimensions] = useState({ width: 420, height: 560 });
+  const [isResizing, setIsResizing] = useState(false);
+
+  const resizeStartRef = useRef({
+    mouseX: 0,
+    mouseY: 0,
+    width: 420,
+    height: 560,
+  });
+
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+
+  const sidebarResizeStartRef = useRef({
+    mouseX: 0,
+    width: SIDEBAR_DEFAULT_WIDTH,
+  });
 
   const selectedUsers = useMemo(
     () => allUsers.filter((u) => selectedUserIds.includes(u.id)),
@@ -168,6 +196,109 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
     if (!open || !activeConversationId || isNewConversationMode) return;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeMessages.length, open, activeConversationId, isNewConversationMode]);
+
+  // Handle drag-resize from the bottom-left corner
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const { mouseX, mouseY, width, height } = resizeStartRef.current;
+
+      // For a bottom-left handle on a right-anchored window:
+      // - Dragging LEFT should increase width
+      // - Dragging DOWN should increase height
+      const dx = mouseX - event.clientX; // left drag => positive
+      const dy = event.clientY - mouseY; // down drag => positive
+
+      let nextWidth = width + dx;
+      let nextHeight = height + dy;
+
+      nextWidth = Math.min(Math.max(nextWidth, MIN_WIDTH), MAX_WIDTH);
+      nextHeight = Math.min(Math.max(nextHeight, MIN_HEIGHT), MAX_HEIGHT);
+
+      setDimensions({ width: nextWidth, height: nextHeight });
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    // Prevent text selection while resizing
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
+
+  const handleResizeMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    resizeStartRef.current = {
+      mouseX: event.clientX,
+      mouseY: event.clientY,
+      width: dimensions.width,
+      height: dimensions.height,
+    };
+    setIsResizing(true);
+  };
+
+  // Handle drag-resize of the conversations sidebar (horizontal)
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const { mouseX, width } = sidebarResizeStartRef.current;
+
+      const dx = event.clientX - mouseX; // drag right => positive
+
+      // Leave at least SIDEBAR_MESSAGES_MIN_SPACE for the messages panel
+      const maxWidth = Math.max(
+        SIDEBAR_MIN_WIDTH,
+        dimensions.width - SIDEBAR_MESSAGES_MIN_SPACE,
+      );
+
+      let nextWidth = width + dx;
+      nextWidth = Math.min(Math.max(nextWidth, SIDEBAR_MIN_WIDTH), maxWidth);
+
+      setSidebarWidth(nextWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+    };
+
+    const previousUserSelect = document.body.style.userSelect;
+    const previousCursor = document.body.style.cursor;
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.body.style.userSelect = previousUserSelect;
+      document.body.style.cursor = previousCursor;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizingSidebar, dimensions.width]);
+
+  const handleSidebarResizeMouseDown = (
+    event: ReactMouseEvent<HTMLDivElement>,
+  ) => {
+    event.preventDefault();
+    sidebarResizeStartRef.current = {
+      mouseX: event.clientX,
+      width: sidebarWidth,
+    };
+    setIsResizingSidebar(true);
+  };
 
   // Live updates: new messages (from other users)
   useEffect(() => {
@@ -412,7 +543,8 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
     <BaseBox className="fixed top-16 right-4 z-2000">
       <BasePaper
         elevation={8}
-        className="w-[420px] h-[560px] flex flex-col rounded-xl overflow-hidden"
+        className="relative flex flex-col rounded-xl overflow-hidden"
+        style={{ width: dimensions.width, height: dimensions.height }}
       >
         {/* Header with strong contrast */}
         <BaseBox className="flex items-center justify-between px-3 py-2 border-b border-slate-900 bg-slate-900 text-slate-50">
@@ -480,72 +612,88 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
         <BaseBox className="flex flex-1 overflow-hidden">
           {/* Conversations list (collapsible) */}
           {showConversations && (
-            <BaseBox className="w-40 border-r border-slate-200 flex flex-col overflow-hidden bg-slate-50/80">
-              <BaseBox className="px-2 py-1 flex items-center justify-between border-b border-slate-200">
-                <span className="text-xs font-semibold text-slate-600">
-                  Conversations
-                </span>
-                {isLoadingConversations && (
-                  <span className="text-[10px] text-slate-400">Loading…</span>
-                )}
-              </BaseBox>
-
-              <BaseBox className="flex-1 overflow-y-auto">
-                {conversations.length === 0 &&
-                  !isLoadingConversations &&
-                  !isNewConversationMode && (
-                    <BaseBox className="px-3 py-4 text-xs text-slate-500">
-                      No conversations yet.
-                    </BaseBox>
+            <>
+              <BaseBox
+                className="border-r border-slate-200 flex flex-col overflow-hidden bg-slate-50/80"
+                style={{ width: sidebarWidth }}
+              >
+                <BaseBox className="px-2 py-1 flex items-center justify-between border-b border-slate-200">
+                  <span className="text-xs font-semibold text-slate-600">
+                    Conversations
+                  </span>
+                  {isLoadingConversations && (
+                    <span className="text-[10px] text-slate-400">
+                      Loading…
+                    </span>
                   )}
+                </BaseBox>
 
-                {conversations.map((c) => {
-                  const isActive =
-                    !isNewConversationMode && c.id === activeConversationId;
-                  const displayName =
-                    c.title ||
-                    c.otherParticipants
-                      .map((p) => p.name || "Unknown")
-                      .join(", ");
-                  const latestSnippet = c.latestMessage?.content ?? "";
+                <BaseBox className="flex-1 overflow-y-auto">
+                  {/* ...unchanged conversations map + empty states... */}
+                  {conversations.length === 0 &&
+                    !isLoadingConversations &&
+                    !isNewConversationMode && (
+                      <BaseBox className="px-3 py-4 text-xs text-slate-500">
+                        No conversations yet.
+                      </BaseBox>
+                    )}
 
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => handleSelectConversation(c.id)}
-                      className={`w-full flex items-start gap-2 px-3 py-2 text-left text-xs border-b border-slate-100 hover:bg-slate-100 transition-colors ${
-                        isActive ? "bg-slate-100" : ""
-                      }`}
-                    >
-                      <Avatar
-                        sx={{ width: 24, height: 24, fontSize: 12 }}
-                        src={c.otherParticipants[0]?.image ?? undefined}
+                  {conversations.map((c) => {
+                    const isActive =
+                      !isNewConversationMode && c.id === activeConversationId;
+                    const displayName =
+                      c.title ||
+                      c.otherParticipants
+                        .map((p) => p.name || "Unknown")
+                        .join(", ");
+                    const latestSnippet = c.latestMessage?.content ?? "";
+
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => handleSelectConversation(c.id)}
+                        className={`w-full flex items-start gap-2 px-3 py-2 text-left text-xs border-b border-slate-100 hover:bg-slate-100 transition-colors ${
+                          isActive ? "bg-slate-100" : ""
+                        }`}
                       >
-                        {displayName?.charAt(0).toUpperCase() ?? "C"}
-                      </Avatar>
-                      <BaseBox className="flex-1 overflow-hidden">
-                        <BaseBox className="flex items-center justify-between gap-1">
-                          <span className="font-semibold truncate text-slate-500">
-                            {displayName}
-                          </span>
-                          {c.unreadCount > 0 && (
-                            <span className="ml-1 rounded-full bg-red-500 text-white text-[10px] px-2 py-px">
-                              {c.unreadCount}
+                        <Avatar
+                          sx={{ width: 24, height: 24, fontSize: 12 }}
+                          src={c.otherParticipants[0]?.image ?? undefined}
+                        >
+                          {displayName?.charAt(0).toUpperCase() ?? "C"}
+                        </Avatar>
+                        <BaseBox className="flex-1 overflow-hidden">
+                          <BaseBox className="flex items-center justify-between gap-1">
+                            <span className="font-semibold truncate text-slate-500">
+                              {displayName}
+                            </span>
+                            {c.unreadCount > 0 && (
+                              <span className="ml-1 rounded-full bg-red-500 text-white text-[10px] px-2 py-px">
+                                {c.unreadCount}
+                              </span>
+                            )}
+                          </BaseBox>
+                          {latestSnippet && (
+                            <span className="block text-[11px] text-slate-500 truncate mt-px">
+                              {latestSnippet}
                             </span>
                           )}
                         </BaseBox>
-                        {latestSnippet && (
-                          <span className="block text-[11px] text-slate-500 truncate mt-px">
-                            {latestSnippet}
-                          </span>
-                        )}
-                      </BaseBox>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })}
+                </BaseBox>
               </BaseBox>
-            </BaseBox>
+
+              {/* Vertical resize handle between sidebar and messages */}
+              <BaseBox
+                className="w-1 cursor-col-resize flex items-stretch bg-slate-100 hover:bg-slate-200"
+                onMouseDown={handleSidebarResizeMouseDown}
+              >
+                <span className="mx-auto my-4 w-0.5 h-10 bg-slate-400 rounded-full" />
+              </BaseBox>
+            </>
           )}
 
           {/* Messages column / New conversation panel */}
@@ -820,6 +968,15 @@ export default function ChatWindow({ open, onClose }: ChatWindowProps) {
               </BaseBox>
             )}
           </BaseBox>
+        </BaseBox>
+
+        {/* Resize handle – bottom-left corner */}
+        <BaseBox
+          className="absolute bottom-1 left-1 w-3 h-3 cursor-nesw-resize flex items-center justify-center rounded-full bg-slate-800/80 border border-slate-500"
+          onMouseDown={handleResizeMouseDown}
+        >
+          {/* little L-shaped graphic */}
+          <span className="block w-2 h-2 border-l border-b border-slate-300" />
         </BaseBox>
       </BasePaper>
     </BaseBox>
